@@ -1,4 +1,5 @@
 name: Build Kivy APK
+
 on:
   workflow_dispatch:
 
@@ -8,8 +9,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # Install all required system packages
       - name: Install system packages
         shell: bash
         run: |
@@ -20,42 +22,50 @@ jobs:
             autoconf automake libtool pkg-config build-essential cmake \
             gettext m4 libffi-dev libssl-dev
 
-      - name: Install Python deps
+      # Install Buildozer and dependencies
+      - name: Install Buildozer
         shell: bash
         run: |
-          pip3 install --upgrade pip
-          pip3 install buildozer cython
-          echo "✅ Python:" $(which python3)
-          echo "✅ Buildozer:" $(which buildozer)
+          python3 -m pip install --upgrade pip Cython
+          python3 -m pip install buildozer
 
-      - name: Install Android SDK
+      # Prepare Android SDK / NDK folders manually
+      - name: Prepare Android SDK and NDK
         shell: bash
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          cd ~/.buildozer/android/platform/android-sdk
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d cmdline-tools
-          mv cmdline-tools/cmdline-tools cmdline-tools/latest
+          mkdir -p ~/.buildozer/android/platform
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          yes | sdkmanager --licenses || true
-          sdkmanager --update || true
-          yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" || true
-          mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
-          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
+          export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
+          echo "✅ SDK and NDK directories prepared"
 
+      # Prepare Autoconf/Libtool macros for libffi build
+      - name: Prepare Autoconf / Libtool macros
+        shell: bash
+        run: |
+          echo "⚙️ Preparing system-wide libtool/autoconf macros..."
+          sudo mkdir -p /usr/share/aclocal
+          if [ -d "/usr/share/libtool" ]; then
+            sudo cp -r /usr/share/libtool/* /usr/share/aclocal/ || true
+          fi
+          if [ -d "/usr/share/libtool/m4" ]; then
+            sudo cp -r /usr/share/libtool/m4/* /usr/share/aclocal/ || true
+          fi
+          sudo cp -r /usr/share/aclocal/* /usr/local/share/aclocal/ || true
+          echo "✅ Autoconf macros prepared."
+
+      # Build the APK using Buildozer
       - name: Build APK
         shell: bash
         run: |
-          echo "🧩 Verifying SDK path..."
-          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:/usr/bin:/usr/local/bin:$PATH"
-          echo "SDK Path: $ANDROID_SDK_ROOT"
-          /usr/bin/python3 -m buildozer -v android debug
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+          echo "🚀 Starting Buildozer build..."
+          python3 -m buildozer -v android debug
           echo "✅ Build completed!"
           ls -R bin || true
 
-      - name: Upload APK Artifact
+      # Upload the APK as an artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: CylinderApp-APK
