@@ -1,5 +1,4 @@
 name: Build Kivy APK
-
 on:
   workflow_dispatch:
 
@@ -8,47 +7,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3 python3-pip python3-setuptools git zip unzip openjdk-17-jdk wget coreutils
+      - name: Install base system packages
+        run: |
+          sudo apt update
+          sudo apt install -y python3 python3-pip python3-setuptools git zip unzip wget openjdk-17-jdk coreutils
 
-    - name: Install Buildozer
-      run: |
-        pip3 install --upgrade pip
-        pip3 install buildozer cython
-        echo "✅ Buildozer installed at:" $(which buildozer)
-        buildozer version || true
+      - name: Install Buildozer + Cython
+        run: |
+          pip3 install --upgrade pip
+          pip3 install buildozer cython
+          echo "Python path:" $(which python3)
+          echo "Buildozer path:" $(which buildozer)
+          buildozer version || true
 
-    - name: Install Android SDK & Accept Licenses
-      run: |
-        mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-        cd ~/.buildozer/android/platform/android-sdk
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-        unzip -q cmdline-tools.zip -d cmdline-tools
-        mv cmdline-tools/cmdline-tools cmdline-tools/latest
-        export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager --licenses
-        yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+      - name: Install Android SDK and accept licenses
+        run: |
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          cd ~/.buildozer/android/platform/android-sdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d cmdline-tools
+          mv cmdline-tools/cmdline-tools cmdline-tools/latest
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          yes | sdkmanager --licenses
+          yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-    - name: Build APK
-      env:
-        ANDROID_SDK_ROOT: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-        PATH: /usr/local/bin:${{ github.workspace }}/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/.buildozer/android/platform/android-sdk/platform-tools:${{ env.PATH }}
-      run: |
-        echo "🧩 Verifying SDK path..."
-        echo "SDK Path: $ANDROID_SDK_ROOT"
-        which buildozer || echo "⚠️ Buildozer not in PATH, using python3 -m buildozer instead."
-        python3 -m buildozer -v android debug || buildozer -v android debug
-        echo "✅ Build completed!"
-        ls -R bin || true
+      - name: Build APK
+        run: |
+          echo "🧩 Verifying SDK path..."
+          export PATH="/usr/bin:/usr/local/bin:$PATH"
+          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          echo "SDK Path: $ANDROID_SDK_ROOT"
+          /usr/bin/python3 -m buildozer -v android debug
+          echo "✅ Build completed!"
+          ls -R bin || true
 
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: CylinderApp-APK
-        path: bin/*.apk
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CylinderApp-APK
+          path: bin/*.apk
