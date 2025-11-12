@@ -14,19 +14,21 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3 python3-pip python3-setuptools git zip unzip openjdk-17-jdk wget
+        sudo apt install -y python3 python3-pip python3-setuptools git zip unzip openjdk-17-jdk wget coreutils
 
     - name: Install Buildozer
       run: |
         pip3 install --upgrade pip
         pip3 install buildozer cython
+        echo "✅ Buildozer installed at:" $(which buildozer)
+        buildozer version || true
 
-    - name: Manually Install Android SDK + NDK + Accept Licenses
+    - name: Install Android SDK & Accept Licenses
       run: |
         mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
         cd ~/.buildozer/android/platform/android-sdk
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-        unzip cmdline-tools.zip -d cmdline-tools
+        unzip -q cmdline-tools.zip -d cmdline-tools
         mv cmdline-tools/cmdline-tools cmdline-tools/latest
         export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
         export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
@@ -36,13 +38,12 @@ jobs:
     - name: Build APK
       env:
         ANDROID_SDK_ROOT: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-        PATH: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/.buildozer/android/platform/android-sdk/platform-tools:${{ env.PATH }}
+        PATH: /usr/local/bin:${{ github.workspace }}/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/.buildozer/android/platform/android-sdk/platform-tools:${{ env.PATH }}
       run: |
         echo "🧩 Verifying SDK path..."
         echo "SDK Path: $ANDROID_SDK_ROOT"
-        ls -R ~/.buildozer/android/platform/android-sdk || true
-        echo "🚀 Starting Buildozer build..."
-        buildozer -v android debug
+        which buildozer || echo "⚠️ Buildozer not in PATH, using python3 -m buildozer instead."
+        python3 -m buildozer -v android debug || buildozer -v android debug
         echo "✅ Build completed!"
         ls -R bin || true
 
