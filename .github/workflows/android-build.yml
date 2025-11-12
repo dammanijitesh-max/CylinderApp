@@ -52,7 +52,15 @@ jobs:
           fi
           sudo cp -r /usr/share/aclocal/* /usr/local/share/aclocal/ || true
           echo "✅ Autoconf macros prepared."
+     
+      
+      - name: Clean Buildozer cache
+        shell: bash
+        run: |
+          rm -rf ~/.buildozer
+          echo "🧹 Cleaned previous build cache"
 
+      
       # Build the APK using Buildozer
       - name: Build APK
         shell: bash
