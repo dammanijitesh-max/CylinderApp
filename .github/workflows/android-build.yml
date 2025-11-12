@@ -34,13 +34,14 @@ jobs:
           rm -rf ~/.buildozer
           mkdir -p ~/.buildozer/android/platform
 
-      - name: Download prebuilt Python-for-Android toolchain
+      - name: Install Python-for-Android (via pip)
         run: |
-          echo "📦 Downloading prebuilt Python-for-Android..."
-          wget -q https://github.com/kivy/python-for-android/archive/refs/tags/2024.04.01.zip -O p4a.zip
-          unzip -q p4a.zip
-          mv python-for-android-2024.04.01 ~/.buildozer/android/platform/python-for-android
+          echo "📦 Installing Python-for-Android from PyPI (stable)..."
+          python3 -m pip install python-for-android==2024.04.01 --upgrade
+          mkdir -p ~/.buildozer/android/platform
+          cp -r $(python3 -m site --user-site)/pythonforandroid ~/.buildozer/android/platform/python-for-android || true
           echo "✅ Python-for-Android ready."
+
 
       - name: Build APK (using prebuilt P4A)
         run: |
