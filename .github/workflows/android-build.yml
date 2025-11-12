@@ -59,7 +59,9 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
-          echo "🚀 Starting Buildozer build..."
+          export P4A_NO_DEPENDENCIES_CHECK=1
+          export USE_SYSTEM_LIBFFI=1
+          echo "🚀 Starting Buildozer build (system libffi)..."
           python3 -m buildozer -v android debug
           echo "✅ Build completed!"
           ls -R bin || true
