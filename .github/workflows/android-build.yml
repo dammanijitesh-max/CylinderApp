@@ -1,81 +1,48 @@
-name: Build Kivy APK
+name: Build Kivy APK (Prebuilt P4A)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install all required system packages
       - name: Install system packages
-        shell: bash
         run: |
           sudo apt update
-          sudo apt install -y \
-            python3 python3-pip python3-setuptools \
-            git zip unzip wget openjdk-17-jdk coreutils \
-            autoconf automake libtool pkg-config build-essential cmake \
-            gettext m4 libffi-dev libssl-dev
+          sudo apt install -y python3 python3-pip openjdk-17-jdk zip unzip git wget coreutils
 
-      # Install Buildozer and dependencies
       - name: Install Buildozer
-        shell: bash
         run: |
-          python3 -m pip install --upgrade pip Cython
-          python3 -m pip install buildozer
+          pip install --upgrade pip Cython buildozer
 
-      # Prepare Android SDK / NDK folders manually
-      - name: Prepare Android SDK and NDK
-        shell: bash
-        run: |
-          mkdir -p ~/.buildozer/android/platform
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b
-          echo "✅ SDK and NDK directories prepared"
-
-      # Prepare Autoconf/Libtool macros for libffi build
-      - name: Prepare Autoconf / Libtool macros
-        shell: bash
-        run: |
-          echo "⚙️ Preparing system-wide libtool/autoconf macros..."
-          sudo mkdir -p /usr/share/aclocal
-          if [ -d "/usr/share/libtool" ]; then
-            sudo cp -r /usr/share/libtool/* /usr/share/aclocal/ || true
-          fi
-          if [ -d "/usr/share/libtool/m4" ]; then
-            sudo cp -r /usr/share/libtool/m4/* /usr/share/aclocal/ || true
-          fi
-          sudo cp -r /usr/share/aclocal/* /usr/local/share/aclocal/ || true
-          echo "✅ Autoconf macros prepared."
-     
-      
-      - name: Clean Buildozer cache
-        shell: bash
+      - name: Clean previous build
         run: |
           rm -rf ~/.buildozer
-          echo "🧹 Cleaned previous build cache"
+          mkdir -p ~/.buildozer/android/platform
 
-      
-      # Build the APK using Buildozer
-      - name: Build APK
-        shell: bash
+      - name: Download prebuilt Python-for-Android toolchain
+        run: |
+          echo "📦 Downloading prebuilt Python-for-Android..."
+          wget -q https://github.com/kivy/python-for-android/archive/refs/tags/2024.04.01.zip -O p4a.zip
+          unzip -q p4a.zip
+          mv python-for-android-2024.04.01 ~/.buildozer/android/platform/python-for-android
+          echo "✅ Python-for-Android ready."
+
+      - name: Build APK (using prebuilt P4A)
         run: |
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
           export P4A_NO_DEPENDENCIES_CHECK=1
-          export USE_SYSTEM_LIBFFI=1
-          export CFLAGS="-Wno-error=implicit-function-declaration"
-          echo "🚀 Starting Buildozer build (skipping libffi rebuild)..."
-          python3 -m buildozer -v android debug
+          echo "🚀 Starting Buildozer build with prebuilt P4A..."
+          buildozer -v android debug
           echo "✅ Build completed!"
           ls -R bin || true
 
-      # Upload the APK as an artifact
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
