@@ -1,0 +1,39 @@
+name: Build Kivy APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3 python3-pip python3-setuptools git zip unzip openjdk-17-jdk
+
+    - name: Install buildozer
+      run: |
+        pip3 install --upgrade pip
+        pip3 install buildozer
+        pip3 install cython
+
+    - name: Install Android SDK/NDK
+      run: |
+        sudo apt install -y libncurses5
+        buildozer android sdk
+
+    - name: Build APK
+      run: |
+        buildozer -v android debug
+        ls -R bin
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: CylinderApp-APK
+        path: bin/*.apk
