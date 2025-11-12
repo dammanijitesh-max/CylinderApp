@@ -19,20 +19,19 @@ jobs:
     - name: Install buildozer
       run: |
         pip3 install --upgrade pip
-        pip3 install buildozer
-        pip3 install cython
+        pip3 install buildozer cython
 
-    - name: Set working directory
-      run: cd $GITHUB_WORKSPACE
-      shell: bash
+    - name: Accept Android SDK Licenses and Install Build Tools
+      run: |
+        mkdir -p ~/.android && touch ~/.android/repositories.cfg
+        yes | sdkmanager --licenses || true
+        yes | sdkmanager --install "build-tools;36.1.0" "platforms;android-33" "platform-tools" || true
 
     - name: Build APK
-      working-directory: ${{ github.workspace }}
       run: |
-        echo "Current directory:"
-        pwd
-        ls -l
+        echo "📦 Starting build..."
         buildozer -v android debug
+        echo "✅ Build completed!"
         ls -R bin
 
     - name: Upload APK Artifact
