@@ -35,15 +35,20 @@ jobs:
           yes | sdkmanager --licenses
           yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Build APK
-        run: |
+            - name: Build APK
+          run: |
           echo "🧩 Verifying SDK path..."
-          export PATH="/usr/bin:/usr/local/bin:$PATH"
           export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:/usr/bin:/usr/local/bin:$PATH"
           echo "SDK Path: $ANDROID_SDK_ROOT"
+          echo "PATH: $PATH"
+          # Create legacy tools symlink so Buildozer finds sdkmanager
+          mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
+          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
           /usr/bin/python3 -m buildozer -v android debug
           echo "✅ Build completed!"
           ls -R bin || true
+
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
