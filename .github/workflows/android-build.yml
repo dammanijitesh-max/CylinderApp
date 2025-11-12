@@ -14,25 +14,30 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3 python3-pip python3-setuptools git zip unzip openjdk-17-jdk
+        sudo apt install -y python3 python3-pip python3-setuptools git zip unzip openjdk-17-jdk wget
 
     - name: Install buildozer
       run: |
         pip3 install --upgrade pip
         pip3 install buildozer cython
 
-    - name: Accept Android SDK Licenses and Install Build Tools
+    - name: Prepare Android SDK for Buildozer
       run: |
-        mkdir -p ~/.android && touch ~/.android/repositories.cfg
-        yes | sdkmanager --licenses || true
-        yes | sdkmanager --install "build-tools;36.1.0" "platforms;android-33" "platform-tools" || true
+        mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+        cd ~/.buildozer/android/platform/android-sdk
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+        unzip cmdline-tools.zip -d cmdline-tools
+        mv cmdline-tools/cmdline-tools cmdline-tools/latest
+        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+          "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
     - name: Build APK
       run: |
-        echo "📦 Starting build..."
-        buildozer -v android debug
-        echo "✅ Build completed!"
-        ls -R bin
+        echo "Starting Buildozer Build..."
+        buildozer android debug
+        echo "✅ Build complete!"
+        ls -R bin || true
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
