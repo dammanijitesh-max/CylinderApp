@@ -12,9 +12,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install system packages
+        shell: bash
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip openjdk-17-jdk zip unzip git wget coreutils
+          sudo apt install -y \
+            python3 python3-pip python3-setuptools \
+            git zip unzip wget openjdk-17-jdk coreutils \
+            autoconf automake libtool libltdl-dev pkg-config \
+            build-essential cmake gettext m4 libffi-dev libssl-dev
 
       - name: Install Buildozer
         run: |
