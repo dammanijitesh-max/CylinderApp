@@ -61,7 +61,8 @@ jobs:
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
           export P4A_NO_DEPENDENCIES_CHECK=1
           export USE_SYSTEM_LIBFFI=1
-          echo "🚀 Starting Buildozer build (system libffi)..."
+          export CFLAGS="-Wno-error=implicit-function-declaration"
+          echo "🚀 Starting Buildozer build (skipping libffi rebuild)..."
           python3 -m buildozer -v android debug
           echo "✅ Build completed!"
           ls -R bin || true
