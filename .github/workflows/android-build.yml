@@ -22,9 +22,16 @@ jobs:
         pip3 install buildozer
         pip3 install cython
 
-    # 👇 removed the problematic libncurses5 line
+    - name: Set working directory
+      run: cd $GITHUB_WORKSPACE
+      shell: bash
+
     - name: Build APK
+      working-directory: ${{ github.workspace }}
       run: |
+        echo "Current directory:"
+        pwd
+        ls -l
         buildozer -v android debug
         ls -R bin
 
