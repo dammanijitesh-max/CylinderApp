@@ -5,7 +5,7 @@ package.domain = org.jitesh
 source.dir = .
 source.include_exts = py,kv,png,jpg,db
 version = 0.1
-requirements = python3,kivy,sqlite3
+requirements = python3,kivy,sqlite3,libffi,openssl
 presplash.filename = assets/presplash.png
 icon.filename = assets/icon.png
 fullscreen = 0
@@ -27,4 +27,5 @@ android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
 # (OPTIONAL) Enable keyboard
 android.disable_window_transparency = True
 android.enable_android_debug_bridge = True
+
 
