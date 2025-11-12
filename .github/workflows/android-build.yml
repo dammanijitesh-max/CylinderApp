@@ -9,7 +9,7 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
@@ -22,11 +22,7 @@ jobs:
         pip3 install buildozer
         pip3 install cython
 
-    - name: Install Android SDK/NDK
-      run: |
-        sudo apt install -y libncurses5
-        buildozer android sdk
-
+    # 👇 removed the problematic libncurses5 line
     - name: Build APK
       run: |
         buildozer -v android debug
