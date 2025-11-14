@@ -1,4 +1,4 @@
-name: Build Kivy APK (Prebuilt P4A)
+name: Build Kivy APK (Stable P4A)
 
 on:
   workflow_dispatch:
@@ -8,53 +8,42 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Install system packages
-        shell: bash
-        run: |
-          echo "🧩 Installing essential build tools..."
-          sudo apt update
-          sudo apt install -y \
-            python3 python3-pip python3-setuptools \
-            git zip unzip wget openjdk-17-jdk coreutils \
-            autoconf automake libtool libltdl-dev pkg-config \
-            build-essential cmake gettext m4 libffi-dev libssl-dev \
-            clang llvm
-          echo "✅ System packages installed successfully."
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          python3-pip python3-setuptools python3-wheel python-is-python3 \
+          zip unzip openjdk-17-jdk wget libffi-dev libssl-dev \
+          liblzma-dev libtool autoconf pkg-config
 
+    - name: Install Buildozer & Cython
+      run: |
+        pip install --upgrade pip
+        pip install buildozer cython==0.29.36
 
-      - name: Install Buildozer
-        run: |
-          pip install --upgrade pip Cython buildozer
+    - name: Install Python-for-Android (P4A) stable build
+      run: |
+        pip install python-for-android==2024.04.01
 
-      - name: Clean previous build
-        run: |
-          rm -rf ~/.buildozer
-          mkdir -p ~/.buildozer/android/platform
+    - name: Accept Android SDK licenses
+      run: |
+        mkdir -p $ANDROID_SDK_ROOT/licenses
+        echo -e "24333f8a63b6825ea9c5514f83c2829b004d1fee\n" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
+        echo -e "d56f5187479451eabf01fb78af6dfcb131a6481e\n" > $ANDROID_SDK_ROOT/licenses/android-sdk-preview-license
+      env:
+        ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
 
-      - name: Install Python-for-Android (via pip)
-        run: |
-          echo "📦 Installing Python-for-Android from PyPI (stable)..."
-          python3 -m pip install python-for-android==2024.04.01 --upgrade
-          mkdir -p ~/.buildozer/android/platform
-          cp -r $(python3 -m site --user-site)/pythonforandroid ~/.buildozer/android/platform/python-for-android || true
-          echo "✅ Python-for-Android ready."
+    - name: Build APK
+      run: |
+        echo "📦 Building APK..."
+        buildozer -v android debug
+        echo "✅ APK Build Finished"
 
-
-      - name: Build APK (using prebuilt P4A)
-        run: |
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
-          export P4A_NO_DEPENDENCIES_CHECK=1
-          echo "🚀 Starting Buildozer build with prebuilt P4A..."
-          buildozer -v android debug
-          echo "✅ Build completed!"
-          ls -R bin || true
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: CylinderApp-APK
-          path: bin/*.apk
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cylinderapp-apk
+        path: bin/*.apk
