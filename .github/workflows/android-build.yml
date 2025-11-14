@@ -1,4 +1,4 @@
-name: Build Kivy APK (Stable P4A)
+name: Build Kivy APK (Stable)
 
 on:
   workflow_dispatch:
@@ -24,9 +24,9 @@ jobs:
         pip install --upgrade pip
         pip install buildozer cython==0.29.36
 
-    - name: Install Python-for-Android (P4A) stable build
+    - name: Install Python-for-Android (P4A)
       run: |
-        pip install python-for-android==2024.04.01
+        pip install python-for-android==2024.1.21
 
     - name: Accept Android SDK licenses
       run: |
